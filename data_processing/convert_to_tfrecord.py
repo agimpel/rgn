@@ -4,7 +4,27 @@
 import sys
 import re
 import tensorflow as tf
-from utils import switch
+
+class switch(object):
+    """Switch statement for Python, based on recipe from Python Cookbook."""
+
+    def __init__(self, value):
+        self.value = value
+        self.fall = False
+
+    def __iter__(self):
+        """Return the match method once, then stop"""
+        yield self.match
+    
+    def match(self, *args):
+        """Indicate whether or not to enter a case suite"""
+        if self.fall or not args:
+            return True
+        elif self.value in args: # changed for v1.5
+            self.fall = True
+            return True
+        else:
+            return False
 
 # Constants
 NUM_DIMENSIONS = 3
@@ -27,7 +47,7 @@ _mask_dict = {'-': '0', '+': '1'}
 
 def letter_to_num(string, dict_):
     """ Convert string of letters to list of ints """
-    patt = re.compile('[' + ''.join(dict_.keys()) + ']')
+    patt = re.compile('[' + ''.join(list(dict_.keys())) + ']')
     num_string = patt.sub(lambda m: dict_[m.group(0)] + ' ', string)
     num = [int(i) for i in num_string.split()]
     return num
@@ -67,22 +87,21 @@ def read_record(file_, num_evo_entries):
 
 def dict_to_tfrecord(dict_):
     """ Convert protein dict into TFRecord. """
-
-    id_ = _bytes_feature([dict_['id']])
+    id_ = _bytes_feature([bytes(dict_['id'], 'UTF-8')])
 
     feature_lists_dict = {}
     feature_lists_dict.update({'primary': _feature_list([_int64_feature([aa]) for aa in dict_['primary']])})
     
-    if dict_.has_key('evolutionary'): 
+    if 'evolutionary' in dict_: 
         feature_lists_dict.update({'evolutionary': _feature_list([_float_feature(list(step)) for step in zip(*dict_['evolutionary'])])})
 
-    if dict_.has_key('secondary'):     
+    if 'secondary' in dict_:     
         feature_lists_dict.update({'secondary': _feature_list([_int64_feature([dssp]) for dssp in dict_['secondary']])})
 
-    if dict_.has_key('tertiary'): 
+    if 'tertiary' in dict_: 
         feature_lists_dict.update({'tertiary': _feature_list([_float_feature(list(coord)) for coord in zip(*dict_['tertiary'])])})
     
-    if dict_.has_key('mask'):
+    if 'mask' in dict_:
         feature_lists_dict.update({'mask': _feature_list([_float_feature([step]) for step in dict_['mask']])})
 
     record = _sequence_example(context=_features({'id': id_}), feature_lists=_feature_lists(feature_lists_dict))
@@ -101,6 +120,7 @@ if __name__ == '__main__':
     while True:
         dict_ = read_record(input_file, num_evo_entries)
         if dict_ is not None:
+            print(len(dict_['evolutionary']))
             tfrecord_serialized = dict_to_tfrecord(dict_).SerializeToString()
             output_file.write(tfrecord_serialized)
         else:

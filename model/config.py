@@ -7,11 +7,11 @@ __license__ = "MIT"
 from ast import literal_eval
 
 # helper functions
-flt_or_none = lambda x: float(x) if x is not None else None
-int_or_none = lambda x: int(x) if x is not None else None
-str_or_none = lambda x: None if isinstance(x, basestring) and x == 'none' else x
-str_or_bool = lambda x: (x == 'true' or x == 'True') if isinstance(x, basestring) else x
-eval_if_str = lambda x: literal_eval(x) if isinstance(x, basestring) else x
+flt_or_false = lambda x: float(x) if x is not None else False
+int_or_false = lambda x: int(x) if x is not None else False
+str_or_none = lambda x: None if isinstance(x, str) and x == 'none' else x
+str_or_bool = lambda x: (x == 'true' or x == 'True') if isinstance(x, str) else x
+eval_if_str = lambda x: literal_eval(x) if isinstance(x, str) else x
 
 def dict_import(file):
     """ Imports configuration dictionary from disk """
@@ -64,7 +64,7 @@ class RGNConfig(Config):
                    'log_model_summaries':   str_or_bool(config.get('logModelSummaries',     True)),
                    'log_alphabet':          str_or_bool(config.get('logAlphabet',           False)),
                    'detailed_logs':         str_or_bool(config.get('detailedLogs',          True)),
-                   'max_checkpoints':       int_or_none(config.get('maxCheckpoints',        None)),
+                   'max_checkpoints':       int_or_false(config.get('maxCheckpoints',        None)),
                    'checkpoint_every_n_hours':      int(config.get('checkpointEveryNHours', 24))} # this is in addition to the max_checkpoints
 
         # compute-related issues 
@@ -74,26 +74,26 @@ class RGNConfig(Config):
                           'default_device':                           config.get('defaultDevice',                  ''),
                           'functions_on_devices':         eval_if_str(config.get('functionsOnDevices',             {'/cpu:0': ['point_to_coordinate']})),
                           'gpu_fraction':                       float(config.get('gpuFraction',                    1)),
-                          'allow_gpu_growth':             str_or_bool(config.get('allowGPUGrowth',                 False)),
+                          'allow_gpu_growth':             str_or_bool(config.get('allowGPUGrowth',                 True)),
                           'fill_gpu':                     str_or_bool(config.get('fillGPU',                        False)),
-                          'num_reconstruction_fragments': int_or_none(config.get('numReconstructionFragments',     6)),
+                          'num_reconstruction_fragments': int_or_false(config.get('numReconstructionFragments',     6)),
                           'num_reconstruction_parallel_iters':    int(config.get('numReconstructionParallelIters', 4))}
 
         # initialization
-        self.initialization = {'graph_seed':                        int_or_none(config.get('randSeed',                      None)),
+        self.initialization = {'graph_seed':                        int_or_false(config.get('randSeed',                      None)),
                                'angle_shift':                       eval_if_str(config.get('angleShift',                    [0., 0., 0.])),
                                'recurrent_forget_bias':                   float(config.get('recurrentForgetBias',           1)),                               
                                'recurrent_init':                    eval_if_str(config.get('recurrentInit',                 None)), # can be list if HO
-                               'recurrent_seed':                    int_or_none(config.get('recurrentSeed',                 None)),
+                               'recurrent_seed':                    int_or_false(config.get('recurrentSeed',                 None)),
                                'recurrent_out_proj_init':           eval_if_str(config.get('recurrentOutProjInit',          {'base': {}, 'bias': {}})),
-                               'recurrent_out_proj_seed':           int_or_none(config.get('recurrentOutProjSeed',          None)),
+                               'recurrent_out_proj_seed':           int_or_false(config.get('recurrentOutProjSeed',          None)),
                                'recurrent_nonlinear_out_proj_init': eval_if_str(config.get('recurrentNonlinearOutProjInit', {'base': {}, 'bias': {}})),
-                               'recurrent_nonlinear_out_proj_seed': int_or_none(config.get('recurrentNonlinearOutProjSeed', None)),
+                               'recurrent_nonlinear_out_proj_seed': int_or_false(config.get('recurrentNonlinearOutProjSeed', None)),
                                'alphabet_init':                     eval_if_str(config.get('alphabetInit',                  {})),
-                               'alphabet_seed':                     int_or_none(config.get('alphabetSeed',                  None)),
-                               'queue_seed':                        int_or_none(config.get('queueSeed',                     None)),
-                               'dropout_seed':                      int_or_none(config.get('dropoutSeed',                   None)),
-                               'zoneout_seed':                      int_or_none(config.get('zoneoutSeed',                   None)),
+                               'alphabet_seed':                     int_or_false(config.get('alphabetSeed',                  None)),
+                               'queue_seed':                        int_or_false(config.get('queueSeed',                     None)),
+                               'dropout_seed':                      int_or_false(config.get('dropoutSeed',                   None)),
+                               'zoneout_seed':                      int_or_false(config.get('zoneoutSeed',                   None)),
                                'evolutionary_multiplier':                 float(config.get('evolutionaryMultiplier',        1))}
 
         # optimization
@@ -107,11 +107,11 @@ class RGNConfig(Config):
                              'initial_accumulator_value': float(config.get('initAccumulatorValue', 0.1)),   # adagrad
                              'rescale_behavior':    str_or_none(config.get('rescaleBehavior',      None)),
                              'gradient_threshold':        float(config.get('gradientThreshold',    'inf')),
-                             'recurrent_threshold': flt_or_none(config.get('recurrentThreshold',   None)),  # only TF-based RNNs
+                             'recurrent_threshold': flt_or_false(config.get('recurrentThreshold',   None)),  # only TF-based RNNs
                              'alphabet_temperature':      float(config.get('alphabetTemperature',  1.0)),
                              'batch_size':                  int(config.get('batchSize',            256)),
                              'num_steps':                   int(config.get('maxSeqLength',         500)),   # Longer seqs removed, shorter ones padded. Max irrespective of curriculum
-                             'num_epochs':          int_or_none(config.get('numEpochs',            None))}
+                             'num_epochs':          int_or_false(config.get('numEpochs',            None))}
 
         # queueing
         self.queueing = {'file_queue_capacity':        int(config.get('fileQueueCapacity',        1000)),  # Defaults make sense if each file has ~100 sequences
@@ -142,8 +142,8 @@ class RGNConfig(Config):
                              'higher_order_layers':                      str_or_bool(config.get('higherOrderLayers',                    False)),
                              'include_recurrent_outputs_between_layers': str_or_bool(config.get('includeRecurrentOutputsBetweenLayers', True)), # HO
                              'include_dihedrals_between_layers':         str_or_bool(config.get('includeDihedralsBetweenLayers',        False)), # HO
-                             'residual_connections_every_n_layers':      int_or_none(config.get('residualConnectionsEveryNLayers',      None)), # HO
-                             'first_residual_connection_from_nth_layer': int_or_none(config.get('firstResidualConnectionFromNthLayer',  1)), # HO
+                             'residual_connections_every_n_layers':      int_or_false(config.get('residualConnectionsEveryNLayers',      None)), # HO
+                             'first_residual_connection_from_nth_layer': int_or_false(config.get('firstResidualConnectionFromNthLayer',  1)), # HO
                              'recurrent_to_output_skip_connections':     str_or_bool(config.get('recurrentToOutputSkipConnections',     False)), # HO
                              'input_to_recurrent_skip_connections':      str_or_bool(config.get('inputToRecurrentSkipConnections',      False)), # HO
                              'all_to_recurrent_skip_connections':        str_or_bool(config.get('allToRecurrentSkipConnections',        False)), # HO
