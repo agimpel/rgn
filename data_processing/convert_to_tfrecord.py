@@ -120,7 +120,6 @@ if __name__ == '__main__':
     while True:
         dict_ = read_record(input_file, num_evo_entries)
         if dict_ is not None:
-            print(len(dict_['evolutionary']))
             tfrecord_serialized = dict_to_tfrecord(dict_).SerializeToString()
             output_file.write(tfrecord_serialized)
         else:
